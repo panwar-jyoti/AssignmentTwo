@@ -1,0 +1,38 @@
+[
+  {
+    "transactionId": "1",
+    "accountNumber": "987654321",
+    "debit": 150,
+    "credit": 300,
+    "date": "2023-12-15T08:30:00Z",
+    "comment": "Purchase at XYZ Store",
+    "additionalDetails": {
+      "merchant": "XYZ Store",
+      "location": "City ABC"
+    }
+  },
+  {
+    "transactionId": "2",
+    "accountNumber": "987654321",
+    "debit": 50,
+    "credit": 0,
+    "date": "2023-12-16T12:45:00Z",
+    "comment": "Online payment",
+    "additionalDetails": {
+      "merchant": "Online Payment",
+      "location": "Virtual"
+    }
+  },
+  {
+    "transactionId": "3",
+    "accountNumber": "987654321",
+    "debit": 0,
+    "credit": 1000,
+    "date": "2023-12-17T10:00:00Z",
+    "comment": "Salary deposit",
+    "additionalDetails": {
+      "employer": "ABC Company",
+      "location": "City XYZ"
+    }
+  }
+]

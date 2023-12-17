@@ -1,0 +1,75 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '3.2.0'
+	id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+	sourceCompatibility = '17'
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter'
+	implementation 'junit:junit:4.13.1'
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+	// https://mvnrepository.com/artifact/org.json/json
+	implementation 'org.json:json:20231013'
+	implementation 'com.google.code.gson:gson:2.10.1'
+
+	// guava cache
+	implementation 'com.google.guava:guava:latest.release'
+
+//	map struct
+	implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+
+	annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+	implementation 'com.mysql:mysql-connector-j:8.2.0'
+
+
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}
+
+task generateDocumentation(type: JavaExec, dependsOn: compileJava) {
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.demo.questionOne.AnnotationParser'
+	args 'com.example.MyClass'
+}
+
+//task generateDocumentation(type: JavaExec, dependsOn: compileJava) {
+//	classpath = sourceSets.main.runtimeClasspath
+//	mainClass = 'com.example.demo.questionOne.AnnotationParser'
+//
+//	// Discover classes annotated with @ClassDocumentation
+//	def annotatedClasses = findAnnotatedClasses('com.example', 'ClassDocumentation')
+//	if (!annotatedClasses.isEmpty()) {
+//		args annotatedClasses.join(',')
+//	} else {
+//		doLast {
+//			logger.lifecycle 'No classes annotated with @ClassDocumentation found.'
+//		}
+//	}
+//}
+//
+//def findAnnotatedClasses(String packageName, String annotationName) {
+//	def result = []
+//	def fileTree = fileTree(dir: sourceSets.main.java.srcDirs, include: '**/*.java').
+//	fileTree.each { file ->
+//		def content = file.text
+//		if (content.contains("@${annotationName}")) {
+//			def className = file.relativePath.pathString.replaceAll('/', '.').replaceAll('\\.java$', '')
+//			result << className
+//		}
+//	}
+//	return result
+//}
