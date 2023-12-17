@@ -1,7 +1,5 @@
 package com.example.demo.questionTwo;
 
-package com.example.demo;
-
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
