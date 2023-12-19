@@ -12,9 +12,9 @@ import org.apache.poi.ss.usermodel.*;
 
 
 public class ExcelReader {
-    static public List<Employee> getEmployeeList() {
-        List<Employee> Employees = new ArrayList<>();
-        try (FileInputStream file = new FileInputStream("C:\\Users\\krishna\\Downloads\\Accolite Interview Data.xlsx")) {
+    static public List<Interviews> getInterviewsList() {
+        List<Interviews> interviews = new ArrayList<>();
+        try (FileInputStream file = new FileInputStream("C:\\Users\\jyoti1\\Downloads\\AccoliteInterviewData.xlsx")) {
             Workbook workbook = WorkbookFactory.create(file);
             FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
             // Assuming you are working with the first sheet
@@ -61,33 +61,33 @@ public class ExcelReader {
                     timeValue = new Time((long) (timeCell.getNumericCellValue() * 24 * 60 * 60 * 1000));
                 }
                 Cell currcell=row.getCell(i++);
-                CellValue curvalue=evaluator.evaluate(currcell);
+                CellValue currentLocation=evaluator.evaluate(currcell);
                 String CurrentLoc="";
-                if(curvalue!=null){
-                    CurrentLoc= curvalue.getStringValue();
+                if(currentLocation!=null){
+                    CurrentLoc= currentLocation.getStringValue();
                 }
                 Cell prefcell=row.getCell(i++);
-                CellValue Prefvalue=evaluator.evaluate(prefcell);
+                CellValue preferenceValue=evaluator.evaluate(prefcell);
                 String PreferredLoc="";
-                if(Prefvalue!=null){
-                    PreferredLoc=Prefvalue.getStringValue();
+                if(preferenceValue!=null){
+                    PreferredLoc=preferenceValue.getStringValue();
                 }
                 Cell candicell=row.getCell(i++);
-                CellValue candivalue=evaluator.evaluate(candicell);
+                CellValue candidatevalue=evaluator.evaluate(candicell);
                 String CandidateName="";
-                if(candivalue!=null){
-                    CandidateName= candivalue.getStringValue();
+                if(candidatevalue!=null){
+                    CandidateName= candidatevalue.getStringValue();
                 }
-                Employee employee = new Employee(sqlDate,sql_Date, Team, PanelName, Round, skill, timeValue, CurrentLoc, PreferredLoc, CandidateName);
-                Employees.add(employee);
+                Interviews interview = new Interviews(sqlDate,sql_Date, Team, PanelName, Round, skill, timeValue, CurrentLoc, PreferredLoc, CandidateName);
+                interviews.add(interview);
             }
-            for(Employee emp: Employees){
+            for(Interviews emp: interviews){
                 System.out.println(emp);
             }
             workbook.close();
         } catch (IOException | EncryptedDocumentException e) {
             e.printStackTrace();
         }
-        return Employees;
+        return interviews;
     }
 }

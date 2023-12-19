@@ -1,7 +1,7 @@
 package com.example.demo.questionOne;
 
 // Example class with annotations and Javadoc comments
-@ClassDocumentation("This is a sample class.")
+@ClassDocumentation
 public class MyClass {
 
     /**
@@ -9,7 +9,7 @@ public class MyClass {
      * @param param Sample parameter
      * @return Sample result
      */
-    @MethodDocumentation("This method performs a sample operation.")
+    @MethodDocumentation
     public String myMethod(String param) {
         return "Result: " + param;
     }
