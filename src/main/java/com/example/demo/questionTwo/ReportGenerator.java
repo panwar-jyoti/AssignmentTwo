@@ -15,6 +15,7 @@ import java.awt.image.BufferedImage;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.sql.*;
+import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,194 +39,153 @@ public class ReportGenerator {
 
     public static void main(String[] args) {
 
-        List<Interviews> interviews= ExcelReader.getInterviewsList();
+        List<Interviews> interviews = ExcelReader.getInterviewsList("C:\\Users\\jyoti1\\Downloads\\AccoliteInterviewData.xlsx");
         System.out.println(interviews.get(1));
         // Insert data into the database using parallel streams
-//        for (Interviews interview : interviews) {
-//            insertInterview(interview);
-//        }
+//        insertInterviews(interviews);
 
         generateCharts(interviews);
     }
+
+    public static void insertInterviews(List<Interviews> interviews) {
+        interviews.parallelStream().forEach(ReportGenerator::insertInterview);
+    }
+
     private static void insertInterview(Interviews interview) {
-        String sql = "INSERT INTO interviews (IDate, Imonth,team,PanelName,round,skill,Itime,Clocation,Plocation,Cname) VALUES (?,?,?,?,?,?,?,?,?,?)";
-        try (Connection connection = dataSource.getConnection();
-             PreparedStatement statement = connection.prepareStatement(sql)) {
-            statement.setDate(1, interview.getDate());
-            statement.setDate(2, interview.getMonth());
-            statement.setString(3,interview.getTeam());
-            statement.setString(4,interview.getPanelName());
-            statement.setString(5,interview.getRound());
-            statement.setString(6,interview.getSkill());
-            statement.setTime(7,interview.getTime());
-            statement.setString(8, interview.getCurrentLoc());
-            statement.setString(9, interview.getPreferredLoc());
-            statement.setString(10, interview.getCandidateName());
-            // Execute the insert statement
-            statement.executeUpdate();
-            System.out.println("Inserting");
+        String sql = "INSERT INTO interviews (Idate, Imonth,team,PanelName,round,skill,Itime,Clocation,Plocation,Cname) VALUES (?,?,?,?,?,?,?,?,?,?)";
+        try (Connection connection = dataSource.getConnection(); PreparedStatement statement = connection.prepareStatement(sql)) {
+            // Set parameters for the prepared statement
+            setInterviewParameters(statement, interview);
+
+            // Execute the query
+            int rowsAffected = statement.executeUpdate();
+
+            // Output result
+            if (rowsAffected > 0) {
+                System.out.println("Data inserted successfully!");
+            } else {
+                System.out.println("Insertion Failed.");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
-    private static void generateCharts(List<Interviews> interviewList) {
-        String pdfPath = "charts.pdf";
+    private static void setInterviewParameters(PreparedStatement statement, Interviews interview) throws SQLException {
+        statement.setDate(1, interview.getDate());
+        statement.setDate(2, interview.getMonth());
+        statement.setString(3, interview.getTeam());
+        statement.setString(4, interview.getPanelName());
+        statement.setString(5, interview.getRound());
+        statement.setString(6, interview.getSkill());
+        statement.setTime(7, interview.getTime());
+        statement.setString(8, interview.getCurrentLoc());
+        statement.setString(9, interview.getPreferredLoc());
+        statement.setString(10, interview.getCandidateName());
+    }
 
-        try (OutputStream os = new FileOutputStream(pdfPath);
-             PdfWriter writer = new PdfWriter(os);
-             PdfDocument pdfDocument = new PdfDocument(writer);
-             Document document = new Document(pdfDocument)) {
+    private static DefaultCategoryDataset executeChartQuery(String sql, String chartTitle, String categoryLabel, String valueLabel) {
+        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
+        try (PreparedStatement preparedStatement = dataSource.getConnection().prepareStatement(sql)) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            while (resultSet.next()) {
+                // Process result set and populate dataset
+                String column1Value = resultSet.getString(1);
+                int column2Value = resultSet.getInt(2);
+                dataset.addValue(column2Value, valueLabel, column1Value);
+                System.out.println(column1Value + ": " + column2Value);
+            }
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
+        }
+        return dataset;
+    }
 
+    private static void generateCharts(List<Interviews> interviews) {
+        String pdfPath = "Report.pdf";
 
-            JFreeChart chart1 = maxInterviewsQuery();
-            System.out.println(chart1);
-            BufferedImage image = chart1.createBufferedImage(700, 500);
+        try (OutputStream os = new FileOutputStream(pdfPath); PdfWriter writer = new PdfWriter(os); PdfDocument pdfDocument = new PdfDocument(writer); Document document = new Document(pdfDocument)) {
+
+            addChartToDocument(maximumInterviews(), document);
+            addChartToDocument(minimumInterviews(), document);
+            addChartToDocument(findTopThreeSkills(), document);
+            addChartToDocument(peakTimeTopThreeSkills(), document);
+//            addChartToDocument(findTopThreePanels(interviews), document);
+
+            System.out.println("PDF Path: " + pdfPath);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void addChartToDocument(JFreeChart chart, Document document) {
+        try {
+            BufferedImage image = chart.createBufferedImage(800, 500);
             Image itextImage = new Image(ImageDataFactory.create(image, null));
-
             document.add(itextImage);
-
-            JFreeChart chart2 = minInterviewsQuery();
-            BufferedImage image2 = chart2.createBufferedImage(700, 500);
-            Image itextImage2 = new Image(ImageDataFactory.create(image2, null));
-
-            document.add(itextImage2);
-
-            JFreeChart chart5 = getTop3killsForPeakTime();
-            BufferedImage image5 = chart5.createBufferedImage(700, 500);
-            Image itextImage5 = new Image(ImageDataFactory.create(image5, null));
-
-            document.add(itextImage5);
-
-            JFreeChart chart4 = getTop3kills();
-            BufferedImage image4 = chart4.createBufferedImage(700, 500);
-            Image itextImage4 = new Image(ImageDataFactory.create(image4, null));
-
-            document.add(itextImage4);
-
-            JFreeChart chart3 = getTop3Panels(interviewList);
-            System.out.println(chart3);
-            BufferedImage image3 = chart3.createBufferedImage(700, 500);
-            Image itextImage3 = new Image(ImageDataFactory.create(image3, null));
-
-            document.add(itextImage3);
-
-            System.out.println("Report successfully saved at location : " + pdfPath);
-        } catch(Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    public static JFreeChart maxInterviewsQuery() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        try (Connection connection = dataSource.getConnection();) {
-            String query = "SELECT teamName, COUNT(*) as interviewCount FROM interviews WHERE month IN ('Oct-23', 'Nov-23') GROUP BY teamName ORDER BY COUNT(*) DESC LIMIT 1";
-            try (PreparedStatement statement = connection.prepareStatement(query); ResultSet set = statement.executeQuery()) {
-                while (set.next()) {
-                    String category = set.getString("teamName");
-                    int value = set.getInt("interviewCount");
-                    dataset.addValue(value, "Records", category);
-                }
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        JFreeChart chart = ChartFactory.createBarChart(
-                "Team with maximum Interviews in Oct'23 and Nov'23",
-                "Team",
-                "Interviews Count",
-                dataset
-        );
-
-        return chart;
+    public static JFreeChart maximumInterviews() {
+        String sql = "SELECT team , COUNT(*) as count from interviews " + "WHERE MONTH(Imonth) IN (10, 11) AND YEAR(Imonth) = 2023 " + "GROUP BY team " + "ORDER BY count DESC " + " Limit 1";
+        return createBarChart(sql, "Team with Maximum Interviews in Oct'23 and Nov'23", "Team", "Total Number Of Interviews");
     }
 
-    public static JFreeChart minInterviewsQuery() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        try(Connection connection = dataSource.getConnection();) {
-            String query = "SELECT teamName, COUNT(*) as interviewCount FROM interviews WHERE month IN ('Oct-23', 'Nov-23') GROUP BY teamName ORDER BY COUNT(*) LIMIT 1";
-            try(PreparedStatement statement = connection.prepareStatement(query); ResultSet set = statement.executeQuery()) {
-                while(set.next()) {
-                    String category = set.getString("teamName");
-                    int value = set.getInt("interviewCount");
-                    dataset.addValue(value, "Records", category);
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-        JFreeChart chart = ChartFactory.createBarChart(
-                "Team with minimum Interviews in Oct'23 and Nov'23",
-                "Team",
-                "Interviews Count",
-                dataset
-        );
-        return chart;
+    static public JFreeChart minimumInterviews() {
+        String sql = "SELECT team , COUNT(*) as count from interviews " + "WHERE MONTH(Imonth) IN (10, 11) AND YEAR(Imonth) = 2023 " + "GROUP BY team " + "ORDER BY count" + " Limit 1";
+        return createBarChart(sql, "Team with Minimum Interviews in Oct'23 and Nov'23", "Team", "Total Number Of Interviews");
     }
 
-    public static JFreeChart getTop3Panels(List<Interviews> interviewList) {
-        Map<String, Integer> panelsTointerviewcounts = interviewList.stream().filter(rec -> rec.getMonth() != null && rec.getMonth().equals("Oct-23") || rec.getMonth() != null && rec.getMonth().equals("Nov-23")).collect(Collectors.groupingBy(record -> record.getPanelName(), Collectors.summingInt(r -> 1)));
+    static public JFreeChart findTopThreeSkills() {
+//        createTopSkillsView();
+        String sql = "SELECT skill, skill_count FROM top_skills_view ORDER BY skill_count DESC LIMIT 3";
+        return createBarChart(sql, "Top 3 skills in the months October and November", "Skill", "Skill Count");
+    }
 
-        List<Map.Entry<String,Integer>> top3Panels= panelsTointerviewcounts.entrySet().stream().sorted(Map.Entry.<String,Integer>comparingByValue().reversed()).limit(3).collect(Collectors.toList());
+    static void createTopSkillsView() {
+        String createViewSql = "CREATE VIEW IF NOT EXISTS top_skills_view AS " + "SELECT skill, COUNT(*) as skill_count " + "FROM interviews " + "WHERE MONTH(Imonth) IN (10, 11) AND YEAR(Imonth) = 2023 " + "GROUP BY skill";
+        executeViewCreation(createViewSql);
+    }
+
+    static public JFreeChart peakTimeTopThreeSkills() {
+//        createPeakTimeInterviewsView();
+        String sql = "SELECT skill, skill_count FROM peak_time_interviews ORDER BY skill_count DESC LIMIT 3";
+        return createBarChart(sql, "Top 3 skills in Peak Time BETWEEN (9 AND 17 )", "Skill", "Skill Count");
+    }
+
+    static void createPeakTimeInterviewsView() {
+        String createViewSql = "CREATE VIEW peak_time_interviews AS " + "SELECT skill, COUNT(*) as skill_count " + "FROM interviews " + "WHERE EXTRACT(HOUR FROM Itime) BETWEEN 9 AND 17 " + "GROUP BY skill";
+        executeViewCreation(createViewSql);
+    }
+
+    static public JFreeChart findTopThreePanels(List<Interviews> interviews) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd");
+        Map<String, Integer> result = interviews.stream().filter(interview -> {
+            dateFormat.format(interview.getMonth());
+            return dateFormat.format(interview.getMonth()).equals("2023-10-01 00:00:00") || dateFormat.format(interview.getMonth()).equals("2023-11-01 00:00:00");
+        }).collect(Collectors.groupingBy(Interviews::getPanelName, Collectors.summingInt(r -> 1)));
+
+        List<Map.Entry<String, Integer>> top3Panels = result.entrySet().stream().sorted(Map.Entry.<String, Integer>comparingByValue().reversed()).limit(3).collect(Collectors.toList());
         DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        System.out.println(dataset);
 
         top3Panels.forEach(entry -> dataset.addValue(entry.getValue(), "Interviews", entry.getKey()));
 
         return ChartFactory.createBarChart("Top 3 panels in October and November 2023", "Panel", "Interview Count", dataset, PlotOrientation.VERTICAL, true, true, false);
     }
 
-    public static JFreeChart getTop3kills() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-        try(Connection connection = dataSource.getConnection();) {
-            String viewCreationQuery = "CREATE VIEW my_view AS SELECT skill, month, count(*) as skillCount FROM interviews GROUP BY skill, month";
-            String selectQuery = "SELECT skill, COUNT(*) AS skillCount FROM my_view WHERE month IN ('Oct-23', 'Nov-23') GROUP BY skill ORDER BY skillCount DESC LIMIT 3";
-            try(Statement statement = connection.createStatement()) {
-                statement.executeUpdate(viewCreationQuery);
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-
-            try (PreparedStatement statement = connection.prepareStatement(selectQuery); ResultSet set = statement.executeQuery()) {
-                while (set.next()) {
-                    String category = set.getString("skill");
-                    int value = set.getInt("skillCount");
-                    dataset.addValue(value, "Records", category);
-                }
-            }
-
-            return ChartFactory.createBarChart("Top 3 skills in the months October and November", "Skill", "Skill Count", dataset, PlotOrientation.VERTICAL, true, true, false);
-
-        } catch(SQLException e) {
-            e.printStackTrace();
-        }
-
-        return null;
+    private static JFreeChart createBarChart(String sql, String chartTitle, String categoryLabel, String valueLabel) {
+        DefaultCategoryDataset dataset = executeChartQuery(sql, chartTitle, categoryLabel, valueLabel);
+        return ChartFactory.createBarChart(chartTitle, categoryLabel, valueLabel, dataset);
     }
 
-    public static JFreeChart getTop3killsForPeakTime() {
-        DefaultCategoryDataset dataset = new DefaultCategoryDataset();
-
-        try(Connection connection = dataSource.getConnection();) {
-            String query = "SELECT skill, COUNT(*) AS skillCount FROM interviews WHERE month IN ('Oct-23', 'Nov-23') AND TIME(time) BETWEEN '17:00:00' AND '18:00:00' GROUP BY skill ORDER BY skillCount DESC LIMIT 3";
-            try(PreparedStatement statement = connection.prepareStatement(query); ResultSet set = statement.executeQuery()) {
-                while(set.next()) {
-                    String category = set.getString("skill");
-                    int value = set.getInt("skillCount");
-                    dataset.addValue(value, "Records", category);
-                }
-            }
-        } catch(SQLException e) {
-            e.printStackTrace();
+    private static void executeViewCreation(String createViewSql) {
+        try (Connection connection = dataSource.getConnection();
+             PreparedStatement createViewStatement = connection.prepareStatement(createViewSql)) {
+            createViewStatement.execute();
+        } catch (SQLException ex) {
+            throw new RuntimeException(ex);
         }
-        JFreeChart chart = ChartFactory.createBarChart(
-                "Top 3 skills in Peak Time (5:00PM to 6:00PM)",
-                "Skill",
-                "Skill Count",
-                dataset
-        );
-        return chart;
     }
 }
