@@ -1,4 +1,7 @@
-package com.example.demo.questionOne;
+package com.example.demo.questionOne.test;
+
+import com.example.demo.questionOne.ClassDocumentation;
+import com.example.demo.questionOne.MethodDocumentation;
 
 // Example class with annotations and Javadoc comments
 @ClassDocumentation

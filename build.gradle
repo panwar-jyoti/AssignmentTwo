@@ -43,6 +43,8 @@ dependencies {
 //	// https://projectlombok.org
 //	compileOnly 'org.projectlombok:lombok:1.18.20'
 //	annotationProcessor 'org.projectlombok:lombok:1.18.20'
+	implementation 'org.reflections:reflections:0.9.12'
+	implementation 'com.github.javaparser:javaparser-symbol-solver-core:3.25.7'
 
 }
 
@@ -50,19 +52,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
-task generateDocumentation(type: JavaExec, dependsOn: compileJava) {
-	classpath = sourceSets.main.runtimeClasspath
-	mainClass = 'com.example.demo.questionOne.AnnotationParser'
-	args 'com.example.MyClass'
-}
 
-//task extractDocumentation(type: JavaExec, dependsOn: compileJava) {
-//	classpath = sourceSets.main.runtimeClasspath
-//	mainClass = 'com.example.demo.questionOne.DocumentationExtractor'
-//
-//	// Specify the output file for extracted documentation
-//	args '--outputFile', 'documentation.txt'
-//}
+task extractDocumentation(type: JavaExec) {
+	classpath = sourceSets.main.runtimeClasspath
+	mainClass = 'com.example.demo.questionOne.DocumentationExtractor'
+}
 
 //class DocumentationExtractor {
 //	public static void main(String[] args) {

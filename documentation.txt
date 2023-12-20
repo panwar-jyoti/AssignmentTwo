@@ -1,4 +1,25 @@
-Class: com.example.demo.questionOne.MyClass
-This is a sample class.
-Method: com.example.demo.questionOne.MyClass.myMethod
-This method performs a sample operation.
+Classes in the package:
+com.example.demo.questionOne.test.MyClass
+
+Classes with @com.example.demo.questionOne.ClassDocumentation:
+com.example.demo.questionOne.test.MyClass
+
+Methods with @com.example.demo.questionOne.MethodDocumentation:
+public java.lang.String com.example.demo.questionOne.test.MyClass.myMethod(java.lang.String)
+
+Classes with javadoc:
+
+Class with annotation but no javadoc:
+Class: com.example.demo.questionOne.test.MyClass
+
+Class with javadoc but no annotation:
+
+Methods with javadoc:
+Method: public String myMethod(String param)
+Javadoc:
+
+     * This is a sample method.
+     * @param param Sample parameter
+     * @return Sample result
+     
+-------------------------------
